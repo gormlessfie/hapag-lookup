@@ -7,7 +7,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from openpyxl import Workbook
 from datetime import datetime
-import time
 
 # fill in input box w/ booking
 def fill_input(driver, tracker, subsequent):
@@ -139,4 +138,3 @@ for entry in list_tracking_numbers:
     click_by_booking(driver)
     
 workbook.save("output/hapag_shipping_dates_changes.xlsx")
-driver.quit()
