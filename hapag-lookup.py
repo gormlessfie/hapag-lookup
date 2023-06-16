@@ -7,16 +7,17 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from openpyxl import Workbook
 from datetime import datetime
+import time
 
 # fill in input box w/ booking
-def fill_input(driver, tracker):
+def fill_input(driver, tracker, subsequent):
     wait_for_content(driver, "//input[@id='tracing_by_booking_f:hl12']")
     
     input_box = driver.find_element(By.XPATH, "//input[@id='tracing_by_booking_f:hl12']")
     input_box.send_keys(tracker)
     
-    # press enter to search
-    input_box.send_keys(Keys.ENTER)
+    if subsequent == 'subsequent':
+        input_box.send_keys(Keys.ENTER) 
     
 def wait_for_content(driver, element):
     # Wait for the JavaScript to fill in elements
@@ -49,9 +50,9 @@ def select_container(driver):
 
     trs[0].click()
     
-def search(driver, tracker):
+def search(driver, tracker, subsequent):
     # Fill input
-    fill_input(driver, tracker)
+    fill_input(driver, tracker, subsequent)
     
     # Select a container
     select_container(driver)
@@ -84,7 +85,6 @@ def retrieve_date_info(driver):
         td_list = relevant_row.find_elements(By.XPATH, "./td")
         
         date = td_list[2].text
-        
         return format_date(date)
         
     except Exception as e:
@@ -109,11 +109,9 @@ workbook = Workbook()
 worksheet = workbook.active
 worksheet.title = "Shipping Date Changes"
 
-
 # Create a new instance of the Firefox driver
 driver = uc.Chrome(use_subprocess=True)
 driver.get('https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html')
-
 
 # Get list of HAPAG tracking numbers
 list_tracking_numbers = open("list-trackers.txt", "r").readlines()
@@ -122,8 +120,13 @@ list_tracking_numbers = open("list-trackers.txt", "r").readlines()
 confirm_cookies(driver)
 
 for entry in list_tracking_numbers:
-    # Search
-    search(driver, entry)
+    
+    if entry == list_tracking_numbers[0]:
+        #Search initial
+        search(driver, entry, 'initial')
+    else:
+        # Search subsequent
+        search(driver, entry, 'subsequent')
     
     date = retrieve_date_info(driver)
     print(date)
@@ -133,6 +136,7 @@ for entry in list_tracking_numbers:
     # append row into worksheet
     worksheet.append(row)
     
-
+    click_by_booking(driver)
+    
 workbook.save("output/hapag_shipping_dates_changes.xlsx")
 driver.quit()
