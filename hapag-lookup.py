@@ -13,10 +13,8 @@ def fill_input(driver, tracker, subsequent):
     wait_for_content(driver, "//input[@id='tracing_by_booking_f:hl12']")
     
     input_box = driver.find_element(By.XPATH, "//input[@id='tracing_by_booking_f:hl12']")
+    input_box.clear()
     input_box.send_keys(tracker)
-    
-    if subsequent == 'subsequent':
-        input_box.send_keys(Keys.ENTER) 
     
 def wait_for_content(driver, element):
     # Wait for the JavaScript to fill in elements
@@ -60,35 +58,30 @@ def search(driver, tracker, subsequent):
     click_details(driver)
     
 def retrieve_date_info(driver):
-    try:
-        # Find a table with id ABC123. <table> <tbody> <tr> ... <tr> <td>... <td>
-        # Collect all the <tr> in the <tbody>
-        # Collect the last <tr> in the list, this is the most recent ETA
-        # Use regex expression to find a string that matches a date format. i.e. [2023-07-11]
-        # Format date
-        # return a string formatted like [5/6]
-        
-        # Wait for table to load
-        wait_for_content(driver, "//table[@id='tracing_by_booking_f:hl66']")
-        
-        # Find the table element by ID
-        table = driver.find_element(By.ID, "tracing_by_booking_f:hl66")
+    # Find a table with id ABC123. <table> <tbody> <tr> ... <tr> <td>... <td>
+    # Collect all the <tr> in the <tbody>
+    # Collect the last <tr> in the list, this is the most recent ETA
+    # Use regex expression to find a string that matches a date format. i.e. [2023-07-11]
+    # Format date
+    # return a string formatted like [5/6]
+    
+    # Wait for table to load
+    wait_for_content(driver, "//table[@id='tracing_by_booking_f:hl66']")
+    
+    # Find the table element by ID
+    table = driver.find_element(By.ID, "tracing_by_booking_f:hl66")
 
-        # Find the tbody element within the table element
-        tbody = table.find_element(By.XPATH, "./tbody")
+    # Find the tbody element within the table element
+    tbody = table.find_element(By.XPATH, "./tbody")
 
-        # Find the tr elements within the tbody element
-        trs = tbody.find_elements(By.XPATH, "./tr")
-        
-        relevant_row = trs.pop()
-        td_list = relevant_row.find_elements(By.XPATH, "./td")
-        
-        date = td_list[2].text
-        return format_date(date)
-        
-    except Exception as e:
-        print(f"There is no date or table found. Skipping... Message: {e}")
-        return "No ETA"
+    # Find the tr elements within the tbody element
+    trs = tbody.find_elements(By.XPATH, "./tr")
+    
+    relevant_row = trs.pop()
+    td_list = relevant_row.find_elements(By.XPATH, "./td")
+    
+    date = td_list[2].text
+    return format_date(date)
   
 def click_by_booking(driver):
     # Returns to the booking screen for subsequent searches
@@ -119,22 +112,27 @@ list_tracking_numbers = open("list-trackers.txt", "r").readlines()
 confirm_cookies(driver)
 
 for entry in list_tracking_numbers:
-    
-    if entry == list_tracking_numbers[0]:
-        #Search initial
-        search(driver, entry, 'initial')
-    else:
-        # Search subsequent
-        search(driver, entry, 'subsequent')
-    
-    date = retrieve_date_info(driver)
-    print(date)
-    entry = entry.strip()
-    row = [entry, date]
-    
-    # append row into worksheet
-    worksheet.append(row)
-    
-    click_by_booking(driver)
+    try:
+        if entry == list_tracking_numbers[0]:
+            #Search initial
+            search(driver, entry, '')
+        else:
+            # Search subsequent
+            search(driver, entry, 's')
+        
+        date = retrieve_date_info(driver)
+        print(date)
+        entry = entry.strip()
+        row = [entry, date]
+        
+        # append row into worksheet
+        worksheet.append(row)
+        click_by_booking(driver)
+    except Exception as e:
+        print(f"Booking # was not found, skipping: {entry}")
+        row = [entry, 'Invalid booking #']
+        worksheet.append(row)
+        click_by_booking(driver)
+        continue
     
 workbook.save("output/hapag_shipping_dates_changes.xlsx")
