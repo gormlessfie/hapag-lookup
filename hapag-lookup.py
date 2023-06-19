@@ -9,12 +9,17 @@ from openpyxl import Workbook
 from datetime import datetime
 
 # fill in input box w/ booking
-def fill_input(driver, tracker, subsequent):
+def fill_input(driver, tracker):
     wait_for_content(driver, "//input[@id='tracing_by_booking_f:hl12']")
     
     input_box = driver.find_element(By.XPATH, "//input[@id='tracing_by_booking_f:hl12']")
     input_box.clear()
     input_box.send_keys(tracker)
+    
+    try:
+        input_box.send_keys(Keys.ENTER)
+    except Exception as e:
+        pass
     
 def wait_for_content(driver, element):
     # Wait for the JavaScript to fill in elements
@@ -47,9 +52,9 @@ def select_container(driver):
 
     trs[0].click()
     
-def search(driver, tracker, subsequent):
+def search(driver, tracker):
     # Fill input
-    fill_input(driver, tracker, subsequent)
+    fill_input(driver, tracker)
     
     # Select a container
     select_container(driver)
@@ -113,12 +118,7 @@ confirm_cookies(driver)
 
 for entry in list_tracking_numbers:
     try:
-        if entry == list_tracking_numbers[0]:
-            #Search initial
-            search(driver, entry, '')
-        else:
-            # Search subsequent
-            search(driver, entry, 's')
+        search(driver, entry)
         
         date = retrieve_date_info(driver)
         print(date)
@@ -128,11 +128,13 @@ for entry in list_tracking_numbers:
         # append row into worksheet
         worksheet.append(row)
         click_by_booking(driver)
+        
     except Exception as e:
-        print(f"Booking # was not found, skipping: {entry}")
-        row = [entry, 'Invalid booking #']
+        print(f"Booking date was not found, skipping: {entry}")
+        row = [entry.strip(), 'Booking date not found']
         worksheet.append(row)
         click_by_booking(driver)
         continue
     
 workbook.save("output/hapag_shipping_dates_changes.xlsx")
+driver.quit()
