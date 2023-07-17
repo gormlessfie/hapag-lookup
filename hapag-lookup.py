@@ -108,7 +108,10 @@ worksheet.title = "Shipping Date Changes"
 worksheet.column_dimensions['A'].width = 25
 
 # Create a new instance of the Firefox driver
-driver = uc.Chrome(use_subprocess=True)
+options = uc.ChromeOptions()
+options.add_argument("--auto-open-devtools-for-tabs")
+
+driver = uc.Chrome(use_subprocess=True, options=options) 
 driver.get('https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html')
 
 # Get list of HAPAG tracking numbers
